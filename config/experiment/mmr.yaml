@@ -1,0 +1,6 @@
+# @package _global_
+
+experiment:
+  num_iters: 1
+  alpha: 0.05
+  falsification_type: MMR-Contrast

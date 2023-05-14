@@ -1,0 +1,13 @@
+# @package _global_
+
+oracle:
+  selection_model:
+    P_S0: None
+    P_X_S0: None 
+    P_X_S1: None
+    prob_indices: None 
+  response_surface:
+    beta_B: None 
+    gamma: None 
+    omega: None 
+    W: None

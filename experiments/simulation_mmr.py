@@ -13,7 +13,7 @@ from itertools import repeat
 from numpy.random import default_rng
 from scipy.stats import norm
 sys.path.append('../data/')
-from DataModule import DataModule, test_params
+from DataModule_old import DataModule, test_params
 sys.path.append('../models/')
 from falsifier import Falsifier
 from baselines import MetaAnalyzer, SimpleBaseline, EvolvedMetaAnalyzer
@@ -73,9 +73,11 @@ def run_simulation(num_iters=2,
     # TODO: update params
     params = {
         'ihdp': True,
-        'num_continuous': 4,
-        'num_binary': 3,
+        'num_continuous': 1,
+        'num_binary': 0,
+        'censoring_type': "cond_indep",
         'confounding_type': 'random',
+        'covariate_unobserved_effect': ['nnhealth','birth.o', 'booze', 'mom.hs'],
         'omega': -23, # [0.2,0.5,.75,1.,1.25]
         # 'gamma_coefs': [0.1,0.2,.5,.75,1.], # fig 1, fig 2
         # 'gamma_coefs': [0.2,0.5,.75,1.,1.25],
@@ -351,6 +353,7 @@ def run_mmr(data_table,
     '''
         Part 2: estimation of signals for OBS studies
     '''
+    breakpoint()
     stacked_tables   = []
     mmr_test_signals = []
     results_to_append = []
@@ -510,7 +513,7 @@ if __name__ == '__main__':
         ('reweighting_type', args.reweighting_type),
         ('reweighting_factor', args.reweighting_factor), 
         ('confounding_type', 'linear-XZ-v2'), 
-        ('num_continuous', 7),
+        ('num_continuous', 1),
         ('num_binary', 0), 
         ('wparam', args.wparam)
     ]

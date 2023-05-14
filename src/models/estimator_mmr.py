@@ -3,10 +3,7 @@ import numpy as np
 from scipy.stats import norm
 import sys 
 
-from falsifier_mmr import FalsifierMMR
-
-sys.path.append('../data/')
-from DataModule import DataModule, test_params
+from src.models.falsifier_mmr import FalsifierMMR
 
 # sklearn logistic regression (propensity score)
 from sklearn.linear_model import LogisticRegression 
@@ -18,8 +15,20 @@ from sklearn.linear_model import LinearRegression
 from sklearn.linear_model import Lasso
 from sklearn.utils import resample
 from itertools import product
-from models import Model, OracleModel
-import model_util
+from src.estimators.models import Model, OracleModel
+import src.models.model_util as model_util
+
+
+def predict_survival(pred_fun,Y):
+    outs = []
+    for i, pred_ in enumerate(pred_fun):
+        if Y[i] < pred_.x[0]:
+            outs.append(1.)
+        elif Y[i] > pred_.x[-1]:
+            outs.append(0.)
+        else:
+            outs.append(pred_(Y[i]))
+    return np.stack(outs)
 
 class OutcomeEstimator: 
 
@@ -75,17 +84,11 @@ class OutcomeEstimator:
         return best_hp[1]
 
     def _compute_rct_estimates(self, cross_fitting_seed=42): 
-        X, Y, T, S = model_util._get_numpy_arrays(self.params, self.stacked_table)
-        
-        # get parameters
-        if self.params['ihdp']: 
-            sub  = self.stacked_table[['S','treat']]
-            sub_rct = sub[sub['S'] == 0]
-            T_rct = sub_rct['treat'].values
-        else: 
-            sub = self.stacked_table[['OS','HRTARM']]
-            sub_rct = sub[sub['OS'] == 0]
-            T_rct = sub_rct['HRTARM'].values 
+        X, Y, T, S, D = model_util._get_numpy_arrays(self.params, self.stacked_table)
+        #
+        sub  = self.stacked_table[['S','treat']]
+        sub_rct = sub[sub['S'] == 0]
+        T_rct = sub_rct['treat'].values
 
         p_T1_S0 = np.sum(T_rct) / T_rct.shape[0]
         p_T0_S0 = np.sum(1-T_rct) / T_rct.shape[0]
@@ -96,12 +99,12 @@ class OutcomeEstimator:
         final_data = []
 
         for train_idx, test_idx in cvk.split(X,S):
-            Xtrain, Ytrain, Ttrain, Strain = X[train_idx], Y[train_idx], T[train_idx], S[train_idx]
-            Xtest, Ytest, Ttest, Stest = X[test_idx], Y[test_idx], T[test_idx], S[test_idx]
+            Xtrain, Ytrain, Ttrain, Strain, Dtrain = X[train_idx], Y[train_idx], T[train_idx], S[train_idx], D[train_idx]
+            Xtest, Ytest, Ttest, Stest, Dtest = X[test_idx], Y[test_idx], T[test_idx], S[test_idx], D[test_idx]
             orig_idx_test = orig_idx[test_idx]
 
-            #Propensity Model
-            if 'Oracle' not in self.params['selection_model']['model_name']:  
+            #S Model
+            if 'Oracle' not in self.params['selection_model']['model_name']:
                 print('\nHP search for selection model for RCT signal.')
                 data_prop = {'X': Xtrain, 'y': Strain}
                 best_hp_prop = self._hp_selection(data_prop, 
@@ -114,15 +117,70 @@ class OutcomeEstimator:
                     hp=best_hp_prop, model_type=self.params['selection_model']['model_type'])
                 s.fit(Xtrain, Strain) 
                 p_s1_x = s.predict(Xtest)
+
+                # Censoring Model with A=1
+                c_idx_train = (Ttrain == 1) * (Strain == 0)
+                c_idx_test = (Ttest == 1) * (Stest == 0)
+
+                c_vec_train = np.array([((1-Dtrain[c_idx_train][i]), Ytrain[c_idx_train][i]) for i in
+                      range(len(Ytrain[c_idx_train]))], dtype=[('e', bool), ('t', float)])
+                c_vec_test = np.array([((1-Dtest[c_idx_test][i]), Ytest[c_idx_test][i]) for i in
+                      range(len(Ytest[c_idx_test]))], dtype=[('e', bool), ('t', float)])
+                
+                data_c = {'X': Xtrain[c_idx_train], 'y': c_vec_train}
+                best_hp_c = self._hp_selection(data_c, 
+                        test_size=0.2, 
+                        seed=self.params['cross_fitting_seed'], 
+                        model_name=self.params['censoring_model']['model_name'], 
+                        hp=self.params['censoring_model']['hp'],
+                        model_type=self.params['censoring_model']['model_type'])
+                c_mod = Model(self.params['censoring_model']['model_name'], 
+                    hp=best_hp_c, model_type=self.params['censoring_model']['model_type'])
+                c_mod.fit(Xtrain[c_idx_train], c_vec_train) 
+                p_c_x = c_mod.predict(Xtest[c_idx_test],return_array=False)
+                p_c = predict_survival(p_c_x, Ytest[c_idx_test])
+                breakpoint()
+                p_c_1 = np.ones(Ytest.shape[0])
+                p_c_1[c_idx_test] = p_c
+
+                # Censoring model with A=0
+                c_idx_train = (Ttrain == 0) * (Strain == 0)
+                c_idx_test = (Ttest == 0) * (Stest == 0)
+
+                c_vec_train = np.array([((1-Dtrain[c_idx_train][i]), Ytrain[c_idx_train][i]) for i in
+                      range(len(Ytrain[c_idx_train]))], dtype=[('e', bool), ('t', float)])
+                c_vec_test = np.array([((1-Dtest[c_idx_test][i]), Ytest[c_idx_test][i]) for i in
+                      range(len(Ytest[c_idx_test]))], dtype=[('e', bool), ('t', float)])
+                
+                data_c = {'X': Xtrain[c_idx_train], 'y': c_vec_train}
+                best_hp_c = self._hp_selection(data_c, 
+                        test_size=0.2, 
+                        seed=self.params['cross_fitting_seed'], 
+                        model_name=self.params['censoring_model']['model_name'], 
+                        hp=self.params['censoring_model']['hp'],
+                        model_type=self.params['censoring_model']['model_type'])
+                c_mod = Model(self.params['censoring_model']['model_name'], 
+                    hp=best_hp_c, model_type=self.params['censoring_model']['model_type'])
+                c_mod.fit(Xtrain[c_idx_train], c_vec_train) 
+                p_c_x = c_mod.predict(Xtest[c_idx_test],return_array=False)
+                p_c = predict_survival(p_c_x, Ytest[c_idx_test])
+                p_c_0 = np.ones(Ytest.shape[0])
+                p_c_0[c_idx_test] = p_c 
+
+            
             else: 
                 print('\nOracle selection model for RCT signal.')
+                raise("Not implemented with censoring yet !")
                 s = OracleModel(self.params['selection_model']['model_name'], \
                     hp={}, model_type='continuous', params=self.params)
                 p_s1_x = s.predict(Xtest, orig_idx_test)
 
+            U1_test = ((1-Stest) * (Dtest))/(1-p_s1_x) * ((Ttest*Ytest) / (p_T1_S0* p_c_1))
+            U0_test = ((1-Stest) * (Dtest))/(1-p_s1_x) * (((1-Ttest)*Ytest) / (p_T0_S0* p_c_0))
+            breakpoint()
             # final signals
-            U1_test = ((1-Stest)/(1-p_s1_x)) * (  (Ttest*Ytest) / p_T1_S0  ) 
-            U0_test = ((1-Stest)/(1-p_s1_x)) * (  ((1-Ttest)*Ytest) / p_T0_S0  ) 
+            #U1_test = ((1-Stest)/(1-p_s1_x)) * (  (Ttest*Ytest) / p_T1_S0  ) 
+            #U0_test = ((1-Stest)/(1-p_s1_x)) * (  ((1-Ttest)*Ytest) / p_T0_S0  ) 
 
             final_data.append((orig_idx_test, U1_test[:,None], U0_test[:,None]))
             
@@ -138,7 +196,7 @@ class OutcomeEstimator:
     
     def _compute_obs_estimates(self, cross_fitting_seed=42): 
         cvk = StratifiedKFold(n_splits=3, shuffle=True, random_state=cross_fitting_seed)
-        X, Y, T, S = model_util._get_numpy_arrays(self.params, self.stacked_table)
+        X, Y, T, S, D = model_util._get_numpy_arrays(self.params, self.stacked_table)
         orig_idx = np.arange(S.shape[0])
 
         final_data = []

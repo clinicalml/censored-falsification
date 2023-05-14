@@ -1,0 +1,38 @@
+# @package _global_
+
+dataset_name: tree
+
+data:
+  _target_: src.DataModule.DataModule
+  _partial_: True
+  root: /Users/edebrouwer/YaleLocal/censored-falsification/data/
+  idhp: True
+  num_continuous: 1
+  num_binary: 0
+  censoring_type: type_1_indep_x #cond_indep
+  confounding_type: random
+  covariate_unobserved_effect: ['nnhealth','birth.o', 'booze', 'mom.hs']
+  omega: -23
+  gamma_coefs: [1.,1.75,2.,2.25,2.75]
+  gamma_probs: [0.2,0.2,0.2,0.2,0.2]
+  grand_seed: 10
+  confounder_seed: 0
+  beta_seed: 4
+  noise_seed: 0
+  selection_seed: 42
+  obs_dict:
+    num_obs: 1
+    sizes: [1.]
+    confounder_concealment: [0]
+    effect_mod_concealment: [True]
+    missing_bias: [False]
+  rct_dict:
+    size: 1.
+  reweighting: True
+  reweighting_type: non_linear
+  reweighting_factor: 0.2
+  kernel: laplace
+  response_surface:
+    ctr: non_linear
+    trt: linear
+  wparam: 2.

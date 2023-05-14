@@ -12,7 +12,22 @@ from sklearn.metrics import roc_auc_score, mean_squared_error
 from skorch import NeuralNetRegressor
 from torch import optim
 from sklearn.ensemble import GradientBoostingClassifier
+from sksurv.linear_model import CoxPHSurvivalAnalysis
+from sksurv.metrics import concordance_index_censored
+from sksurv.nonparametric import kaplan_meier_estimator
+from sksurv.functions import StepFunction
 
+class KM:
+    def __init__(self):
+        return
+    
+    def fit(self,X,y):
+        x,y = kaplan_meier_estimator(y["e"], y["t"])
+        self.model = StepFunction(x,y)
+    
+    def predict(self,X):
+        return self.model(X)
+    
 class Model: 
     
     def __init__(self, model_name='LogisticRegression', hp={}, model_type='binary'): 
@@ -38,7 +53,7 @@ class Model:
             msl = params.get('min_samples_leaf', 1.)
             mss = params.get('min_samples_split', 1.)
             mf = params.get('max_features', 1.)
-            rs = params.get('random_state', 1.)
+            rs = int(params.get('random_state', 1.))
             return GradientBoostingClassifier(learning_rate = lr, n_estimators = ne,\
                                               max_depth = md, min_samples_leaf = msl,\
                                               min_samples_split = mss, max_features = mf,\
@@ -89,17 +104,30 @@ class Model:
                                 learning_rate=learning_rate,
                                 learning_rate_init=learning_rate_init,
                                 max_iter=max_iter)
+        
+        elif name == "CoxModel":
+            alpha = params.get('alpha',0.)
+            return CoxPHSurvivalAnalysis(alpha=alpha)
+        
+        elif name == "KM":
+            return kaplan_meier_estimator() 
 
-    
     def fit(self, X, y): 
 #         if self.model_name == 'MLP': 
 #             X = X.astype(np.float32)
 #             y = y.reshape(-1,1).astype(np.float32)
-        self.model.fit(X,y)
+
+        try:
+            self.model.fit(X,y)
+        except ValueError as e:
+            print(e)
+            breakpoint()
     
-    def predict(self, X): 
+    def predict(self, X, return_array = True): 
         if self.model_type == 'binary':
             return self.model.predict_proba(X)[:,1]
+        elif self.model_type == 'survival':
+            return self.model.predict_survival_function(X, return_array= return_array) # the survival function.
         else:
             return self.model.predict(X).squeeze()
     
@@ -108,6 +136,10 @@ class Model:
             return roc_auc_score(y_true, y_predict)
         elif self.model_type == 'continuous': 
             return -mean_squared_error(y_true, y_predict)
+        elif self.model_type == 'survival':
+            return concordance_index_censored(y_true["e"], y_true["t"], 1-y_predict[:,0])
+        elif self.model_type == 'KM':
+            return 0
         else: 
             raise ValueError('metric can only be computed for binary and continuous outcomes')
 
@@ -133,7 +165,7 @@ class OracleModel(Model):
             prob_indices_rct      = self.params['oracle_params']['selection_model']['prob_indices_rct']
             return (P_S0, P_X_S0, P_X_S1, prob_indices_obs, prob_indices_rct)
     
-    def predict(self, X, orig_idx_test=[]):  
+    def predict(self, X, orig_idx_test=[]):         
         if self.model_name == 'ResponseSurfaceOracle-0': 
             beta_B, gamma, _, W = self.model 
             num_covariates = W.shape[0]
@@ -150,6 +182,7 @@ class OracleModel(Model):
             num_covariates = W.shape[0]
             X_orig = X[...,:num_covariates]
             Z = X[...,num_covariates:]
+            breakpoint()
             return (np.matmul(X_orig,beta_B) - omega \
                     + np.matmul(Z,gamma)).squeeze()
         elif self.model_name == 'SelectionModelOracle': 

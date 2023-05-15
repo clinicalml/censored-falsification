@@ -1,0 +1,55 @@
+# @package _global_
+
+
+model:
+  _target_: src.models.mmr.MMR
+  _partial_: True
+  ihdp: True
+  obs_dict:
+    num_obs: 1
+    sizes: [3.,4.,5.,7.,10] # TODO: play with this a little bit
+    confounder_concealment: [cc,cc,cc,cc,cc] # will be concealed according to ordering of coefficients
+    missing_bias: [False,False,False,False,False]
+    effect_mod_concealment: False
+  rct_dict:
+    size: 3.  
+  num_continuous: 1
+  num_binary: 0
+  cross_fitting_seed: 42
+
+  propensity_model:
+    model_name: GradientBoostingClassifier
+    hp:
+      learning_rate: [0.01]
+      n_estimators: [50]
+      max_depth: [2]
+      min_samples_leaf: [50]
+      min_samples_split: [50]
+      max_features: ['sqrt']
+      random_state': [42]
+    model_type: binary 
+  kernel: laplace
+
+  selection_model:
+    model_name: GradientBoostingClassifier 
+    hp:
+      learning_rate: [0.01]
+      n_estimators: [50]
+      max_depth: [2]
+      min_samples_leaf: [50]
+      min_samples_split: [50]
+      max_features: ['sqrt']
+      random_state': [42]
+    model_type: 'binary' 
+    P_S0: None
+    P_X_S0: None 
+    P_X_S1: None
+    prob_indices: None
+  response_surface_1:
+    model_name: 'LinearRegression'
+    hp: {}
+    model_type: 'continuous'
+  response_surface_0:
+    model_name: 'LinearRegression'
+    hp: {}
+    model_type: 'continuous'

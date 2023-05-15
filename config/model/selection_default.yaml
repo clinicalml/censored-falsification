@@ -1,0 +1,18 @@
+# @package _global_
+
+model:
+  selection_model:
+    model_name: GradientBoostingClassifier 
+    hp:
+      learning_rate: [0.01]
+      n_estimators: [50]
+      max_depth: [2]
+      min_samples_leaf: [50]
+      min_samples_split: [50]
+      max_features: ['sqrt']
+      random_state': [42]
+    model_type: 'binary' 
+    P_S0: None
+    P_X_S0: None 
+    P_X_S1: None
+    prob_indices: None

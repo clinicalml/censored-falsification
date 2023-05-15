@@ -1,0 +1,12 @@
+# @package _global_
+
+model:
+  response_surface_1:
+    model_name: 'LinearRegression'
+    hp: {}
+    model_type: 'continuous'
+  response_surface_0:
+    model_name: 'LinearRegression'
+    hp: {}
+    model_type: 'continuous'
+    

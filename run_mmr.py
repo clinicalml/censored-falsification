@@ -37,8 +37,13 @@ def main(cfg):
         
         model_cls = instantiate(cfg.model)(seed = cfg["seed"],oracle_params = data_cls.oracle_params)
         
-        results = model_cls.run(data_cls, data_dicts, alpha = cfg.experiment.alpha, iter_=iter_, falsification_type=cfg.experiment.falsification_type)
+        results_ = model_cls.run(data_cls, data_dicts, alpha = cfg.experiment.alpha, iter_=iter_, falsification_type=cfg.experiment.falsification_type)
         pprint.pprint(results, sort_dicts=False)
+        results.append(results_)
+    
+    R_inter = pd.DataFrame(results)
+    R_inter.to_csv(f"{cfg.model.censoring_type}.csv")
+    
     return results     
 
 if __name__ == '__main__': 

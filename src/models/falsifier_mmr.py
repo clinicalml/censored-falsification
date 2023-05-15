@@ -93,7 +93,7 @@ class FalsifierMMR():
         '''
         
         # define RBF kernel with bw based on median heuristic 
-        X, _, _, _ = model_util._get_numpy_arrays(self.params, stacked_table)
+        X, _, _, _, _, _, _ = model_util._get_numpy_arrays(self.params, stacked_table)
         N = X.shape[0]
 
         # compute M-squared statistic 

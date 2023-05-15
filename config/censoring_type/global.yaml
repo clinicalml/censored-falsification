@@ -1,0 +1,6 @@
+# @package _global_
+
+## This is always dependent on X.
+
+censoring_type: 
+  censoring_type: global

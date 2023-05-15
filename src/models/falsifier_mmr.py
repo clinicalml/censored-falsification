@@ -58,7 +58,7 @@ def bootstrap(rng,
         s3_2 = Mboot_term(Xcont, gamma_cont, psi_prime_cont)
         s3_1 = M1_term(Xcont, Xcont, gamma_cont, psi_prime_cont)
         return (N*(np.dot(s3_1.squeeze(), psi_prime.squeeze()) - s3_2.squeeze()))
-    
+
     M_full   = np.outer(rho, rho) * h
     M   = np.sum(M_full)
     return N*M
@@ -93,7 +93,7 @@ class FalsifierMMR():
         '''
         
         # define RBF kernel with bw based on median heuristic 
-        X, _, _, _, _, _, _ = model_util._get_numpy_arrays(self.params, stacked_table)
+        X, _, _, S, _, _, _ = model_util._get_numpy_arrays(self.params, stacked_table)
         N = X.shape[0]
 
         # compute M-squared statistic 
@@ -157,10 +157,11 @@ class FalsifierMMR():
                 print(f'[total time for kernel and M2 computation: {time.time()-t}]')
         
         # stratified bootstrap 
-        if self.params['ihdp']: 
-            num_rct = len(stacked_table[stacked_table['S'] == 0])
-            num_obs = len(stacked_table[stacked_table['S'] == 1])
+        if self.params['ihdp']:
+            num_rct = len(S[S == 0])
+            num_obs = len(S[S == 1])
         else: 
+            raise ("NOT IMPLEMENTED YET")
             num_rct = len(stacked_table[stacked_table['OS'] == 0])
             num_obs = len(stacked_table[stacked_table['OS'] == 1])
         M2_boot = []

@@ -1,8 +1,8 @@
 # @package _global_
 
-model:
+censoring_model:
   censoring_model:
     model_name: CoxModel
     hp:
       alpha: [0., 0.001, 0.01, 0.1]
-    model_type: 'survival'
+    model_type: 'survival' 

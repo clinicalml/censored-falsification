@@ -1,6 +1,6 @@
 # @package _global_
 
-model:
+censoring_model:
   censoring_model:
     model_name: KM
     hp: {}

@@ -11,7 +11,6 @@ import pprint
 
 @hydra.main(version_base=None, config_path="config", config_name="default")
 def main(cfg):
-
     from numpy.random import default_rng
     rng = default_rng(cfg['seed'])
 

@@ -9,7 +9,7 @@ data:
   ihdp: True
   num_continuous: 1
   num_binary: 0
-  censoring_type: type_1_indep_x #cond_indep
+  censoring_type: ${censoring_type.censoring_type}
   confounding_type: random
   covariate_unobserved_effect: ['nnhealth','birth.o', 'booze', 'mom.hs']
   omega: -23

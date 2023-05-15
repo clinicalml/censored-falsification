@@ -24,6 +24,21 @@ def _stack(params, rct_table, obs_table):
     pooled_table = pooled_table.dropna(axis=1)
     return pooled_table
 
+
+def _process_data_mmr(model_type, X, Y_p, T, S, Y, C, D):
+        """
+        If we want to process the censored data with the classical MMR, we have different strategies:
+        - we drop the censored observations
+        - we consider censored observations are actually observed
+        """
+        if model_type == "drop_censored":
+            idx = D==1
+            return X[idx], Y_p[idx], T[idx], S[idx], Y[idx], C[idx], D[idx]
+        if model_type == "censoring_impute":
+            return X, Y_p, T, S, Y, C, np.ones(D.shape) 
+
+        return X, Y_p, T, S, Y, C, D
+
 def _get_numpy_arrays(params, table): 
 
         X = table.drop(columns=['y_hat','S','treat','c_hat'], inplace=False).values
@@ -33,5 +48,13 @@ def _get_numpy_arrays(params, table):
         S = table['S'].values
         D = (table["c_hat"] >= table["y_hat"]).astype(int).values
         Y_p = D*Y + (1-D)*C # we only return the first of both values.
+        
+        if params["censoring_model"]["model_name"] == "MMR":
+              return _process_data_mmr(model_type = params["censoring_model"]["model_type"],
+                                       X= X,
+                                        Y_p =  Y_p,
+                                        T = T,
+                                         S = S,
+                                          Y = Y, C = C, D =D )
 
         return X, Y_p, T, S, Y, C, D

@@ -1,0 +1,6 @@
+# @package _global_
+
+censoring_model:
+  censoring_model:
+    model_name: MMR
+    model_type: 'censoring_impute' # We consider Y~ as the true signal in classical MMR 

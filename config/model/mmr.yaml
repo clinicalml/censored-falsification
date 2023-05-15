@@ -1,7 +1,7 @@
 # @package _global_
 
 defaults:
-  - unconditional_censoring
+  - censoring_default
   - propensity_default
   - selection_default
   - response_surface_default

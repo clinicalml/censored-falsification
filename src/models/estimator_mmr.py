@@ -108,6 +108,11 @@ class OutcomeEstimator:
         Xtrain, Yptrain, Ttrain, Strain, Dtrain, Ctrain, Ytrain = train_vecs
         Xtest, Yptest, Ttest, Stest, Dtest, Ctest, Ytest = test_vecs
 
+        if self.params["censoring_model"]["model_name"] == "MMR":
+            return np.ones(Ytest.shape[0])
+        
+        # RETURN 1 IF CLASSICAL MMR
+
         c_vec_train = self._create_censoring_response( censoring_type = self.params["censoring_type"],
                                                              Y_p =  Yptrain,
                                                              Y=  Ytrain,
@@ -143,6 +148,7 @@ class OutcomeEstimator:
         return p_out
 
 
+
     def _compute_phi0_estimates(self, cross_fitting_seed=42, S_target = 0): 
         """
         Compute the phi0 signal.
@@ -151,7 +157,7 @@ class OutcomeEstimator:
         """
 
         X, Y_p, T, S, Y, C, D = model_util._get_numpy_arrays(self.params, self.stacked_table)
-        #
+
         sub  = self.stacked_table[['S','treat']]
         sub_study = sub[sub['S'] == S_target]
         T_study = sub_study['treat'].values
@@ -213,8 +219,8 @@ class OutcomeEstimator:
 
             p_s_x = (1-p_s1_x) * (1-S_target) + p_s1_x * S_target # P(S==S_target|X)
 
-            U1_test = ((1-Stest) * (Dtest))/(1-p_s_x) * ((Ttest*Ytest) / (p_T1_S* p_c_1))
-            U0_test = ((1-Stest) * (Dtest))/(1-p_s_x) * (((1-Ttest)*Ytest) / (p_T0_S* p_c_0))
+            U1_test = ((1-Stest) * (Dtest))/(1-p_s_x) * ((Ttest*Yptest) / (p_T1_S* p_c_1))
+            U0_test = ((1-Stest) * (Dtest))/(1-p_s_x) * (((1-Ttest)*Yptest) / (p_T0_S* p_c_0))
             # final signals
             #U1_test = ((1-Stest)/(1-p_s1_x)) * (  (Ttest*Ytest) / p_T1_S0  ) 
             #U0_test = ((1-Stest)/(1-p_s1_x)) * (  ((1-Ttest)*Ytest) / p_T0_S0  ) 
@@ -234,6 +240,7 @@ class OutcomeEstimator:
     def _compute_obs_estimates(self, cross_fitting_seed=42): 
         cvk = StratifiedKFold(n_splits=3, shuffle=True, random_state=cross_fitting_seed)
         X, Y, T, S, Yt, Ct, D = model_util._get_numpy_arrays(self.params, self.stacked_table)
+
         orig_idx = np.arange(S.shape[0])
 
         final_data = []

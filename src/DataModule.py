@@ -33,7 +33,7 @@ class DataModule:
         self.confounder_seed = confounder_seed
         self.beta_seed  = data_cfg['beta_seed']
         self.noise_seed = noise_seed
-    
+
         self.censoring_type = data_cfg["censoring_type"]
 
         self.oracle_params = {"selection_model": {"P_X_S0": None, "P_X_S1": None, "P_S0": None},

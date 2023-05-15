@@ -1,0 +1,4 @@
+# @package _global_
+
+censoring_type:
+  censoring_type: type_1_dep_x #cond_indep

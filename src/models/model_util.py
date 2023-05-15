@@ -32,6 +32,6 @@ def _get_numpy_arrays(params, table):
         T = table['treat'].values
         S = table['S'].values
         D = (table["c_hat"] >= table["y_hat"]).astype(int).values
-        Y = D*Y + (1-D)*C # we only return the first of both values.
+        Y_p = D*Y + (1-D)*C # we only return the first of both values.
 
-        return X, Y, T, S, D
+        return X, Y_p, T, S, Y, C, D

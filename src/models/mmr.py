@@ -28,7 +28,7 @@ class MMR:
                                     rct_partial=False)
             stacked_tables.append(oe.get_stacked_table())
             U_obs_a1, U_obs_a0 = oe.estimate_signals(S=1)
-            
+
             '''
                 Part 3: estimation of signals for RCT studies
             '''            
@@ -51,7 +51,6 @@ class MMR:
             results_add['obs_study_size'] = self.model_cfg['obs_dict']['sizes'][k]
             results_add['p_val'] = p_val
             results_add['reject'] = int(p_val < alpha)
-
             if visualize: 
                 print('[Visualizing witness function!]')
                 covariate_names = ['nnhealth', 'booze']; covariate_types = ['continuous', 'binary']

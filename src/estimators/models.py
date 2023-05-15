@@ -28,6 +28,12 @@ class KM:
     def predict(self,X):
         return self.model(X)
     
+    def predict_survival_function(self,X, return_array = False):
+        if return_array:
+            return self.model.y[None,:].repeat(len(X),0)
+        else:
+            return [self.model for _ in range(len(X))]
+    
 class Model: 
     
     def __init__(self, model_name='LogisticRegression', hp={}, model_type='binary'): 
@@ -110,7 +116,7 @@ class Model:
             return CoxPHSurvivalAnalysis(alpha=alpha)
         
         elif name == "KM":
-            return kaplan_meier_estimator() 
+            return KM()
 
     def fit(self, X, y): 
 #         if self.model_name == 'MLP': 

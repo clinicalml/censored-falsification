@@ -6,7 +6,7 @@ data:
   _target_: src.DataModule.DataModule
   _partial_: True
   root: /Users/edebrouwer/YaleLocal/censored-falsification/data/
-  idhp: True
+  ihdp: True
   num_continuous: 1
   num_binary: 0
   censoring_type: type_1_indep_x #cond_indep
@@ -21,13 +21,13 @@ data:
   noise_seed: 0
   selection_seed: 42
   obs_dict:
-    num_obs: 1
-    sizes: [1.]
-    confounder_concealment: [0]
-    effect_mod_concealment: [True]
-    missing_bias: [False]
+    num_obs: 5
+    sizes: [3.,4.,5.,7.,10] # TODO: play with this a little bit
+    confounder_concealment: [0,0,0,0,0] #[cc,cc,cc,cc,cc] # will be concealed according to ordering of coefficients
+    missing_bias: [False,False,False,False,False]
+    effect_mod_concealment: False
   rct_dict:
-    size: 1.
+    size: 3.  
   reweighting: True
   reweighting_type: non_linear
   reweighting_factor: 0.2

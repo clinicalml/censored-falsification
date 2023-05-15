@@ -28,6 +28,7 @@ def main(cfg):
             Part 1: data simulation piece 
         ''' 
         
+        
         print(f'data generation parameters:')
         #oracle_params = OmegaConf.to_container(cfg.oracle, resolve=True)
         data_cls = instantiate(cfg.data)(confounder_seed=confounder_seeds[iter_], noise_seed=noise_seeds[iter_])

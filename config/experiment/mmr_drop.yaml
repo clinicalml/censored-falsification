@@ -1,0 +1,12 @@
+# @package _global_
+
+defaults:
+  - override /censoring_type: no_censoring #type1_indep_x
+  - override /censoring_model: mmr_drop
+
+num_iters: 5
+alpha: 0.05
+falsification_type: MMR-Contrast
+propensity_weighting_for_phi1: True
+
+name: mmr_drop

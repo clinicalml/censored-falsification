@@ -23,7 +23,7 @@ data:
   obs_dict:
     num_obs: 1
     sizes: [3.] # TODO: play with this a little bit
-    confounder_concealment: [0] #[cc,cc,cc,cc,cc] # will be concealed according to ordering of coefficients
+    confounder_concealment: [3] #[cc,cc,cc,cc,cc] # will be concealed according to ordering of coefficients
     missing_bias: [False]
     effect_mod_concealment: False
   rct_dict:

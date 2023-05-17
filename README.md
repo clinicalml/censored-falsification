@@ -1,4 +1,4 @@
-# censored-falsification
+# Censored Falsification
 Code for paper, `Testing the validity of observational studies with right censoring`
 
 

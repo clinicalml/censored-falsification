@@ -2,6 +2,7 @@
 
 defaults:
   - censoring_default
+  - event_default
   - propensity_default
   - selection_default
   - response_surface_default
@@ -10,4 +11,4 @@ defaults:
 model: 
   kernel: laplace
   censoring_type: ${data.censoring_type}
-  phi1_as_phi0: True #Use the same estimator for phi1 and phi0
+  propensity_weighting_for_phi1: ${propensity_weighting_for_phi1} #Use the same estimator for phi1 and phi0

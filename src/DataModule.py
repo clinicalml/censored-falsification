@@ -228,8 +228,13 @@ class DataModule:
                 c_mean0 = mean0 + censoring_shift
                 c_mean1 = mean1 + censoring_shift
             elif self.censoring_type == 'type_1_indep_x':
-                c_mean0 = np.random.uniform(low= 25, high= 40)
-                c_mean1 = np.random.uniform(low= 25, high= 40)
+                c_mean0 = np.random.uniform(low= 28, high= 50)
+                c_mean1 = np.random.uniform(low= 28, high= 50)
+            elif self.censoring_type == 'no_censoring':
+                c_mean0 = 10000 + np.random.uniform(low= 25, high= 40)
+                c_mean1 = 10000 + np.random.uniform(low= 25, high= 40) 
+            else:
+                raise('Censoring type not supported')
             
             y0.append(mean0); y1.append(mean1)
             c0.append(c_mean0); c1.append(c_mean1)

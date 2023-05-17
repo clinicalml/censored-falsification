@@ -6,8 +6,8 @@ defaults:
   - log_dir: default.yaml
   - data: ihdp.yaml
   - model: mmr.yaml
-  - experiment: mmr.yaml
   - censoring_model: unconditional_censoring.yaml
+  - event_model: conditional_event.yaml
   - censoring_type: type1_indep_x.yaml
   #- oracle: oracle.yaml
   # - graph: graphtools.yaml

@@ -27,16 +27,20 @@ class MMR:
                                     params=self.model_cfg,
                                     rct_partial=False)
             stacked_tables.append(oe.get_stacked_table())
+
+
             U_obs_a1, U_obs_a0 = oe.estimate_signals(S=1)
 
             '''
                 Part 3: estimation of signals for RCT studies
             '''            
             U_rct_a1, U_rct_a0 = oe.estimate_signals(S=0)
+            
             psi1 = U_obs_a1 - U_rct_a1 
             psi0 = U_obs_a0 - U_rct_a0  
             mmr_test_signals.append((psi0,psi1))
             
+            breakpoint()
 
         '''
             Part 4: write new falsifier that incorporates MMR test 

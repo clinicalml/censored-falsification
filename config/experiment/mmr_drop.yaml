@@ -1,7 +1,7 @@
 # @package _global_
 
 defaults:
-  - override /censoring_type: no_censoring #type1_indep_x
+  - override /censoring_type: type1_indep_x
   - override /censoring_model: mmr_drop
 
 num_iters: 5

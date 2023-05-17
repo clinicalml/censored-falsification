@@ -228,14 +228,18 @@ class DataModule:
                 c_mean0 = mean0 + censoring_shift
                 c_mean1 = mean1 + censoring_shift
             elif self.censoring_type == 'type_1_indep_x':
-                c_mean0 = np.random.uniform(low= 28, high= 50)
-                c_mean1 = np.random.uniform(low= 28, high= 50)
+                c_mean0 = np.random.uniform(low= 25, high= 100)
+                c_mean1 = np.random.uniform(low= 25, high= 100)
             elif self.censoring_type == 'no_censoring':
                 c_mean0 = 10000 + np.random.uniform(low= 25, high= 40)
                 c_mean1 = 10000 + np.random.uniform(low= 25, high= 40) 
             else:
                 raise('Censoring type not supported')
             
+            if data_type=='obs':
+                print("SOMETING WEIRD ")
+                mean1 += 20
+                mean0 += 20
             y0.append(mean0); y1.append(mean1)
             c0.append(c_mean0); c1.append(c_mean1)
 
@@ -263,7 +267,7 @@ class DataModule:
         self.oracle_params['response_surface']['W'] = W 
         self.oracle_params['response_surface']['omega'] = omega
         #self.oracle_params['response_surface']['censoring_shift'] = censoring_shift 
-        
+
         return confound_table
     
     def _apply_conf_concealment(self, confound_table, gamma, idx=0): 
@@ -294,7 +298,8 @@ class DataModule:
         
         ## assign the tables
         self.obs_tables = obs_table
-        self.rct_table = rct_table 
+        self.rct_table = rct_table
+
         
     def generate_dataset(self): 
         # generate data 

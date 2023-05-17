@@ -16,6 +16,7 @@ from sksurv.linear_model import CoxPHSurvivalAnalysis
 from sksurv.metrics import concordance_index_censored
 from sksurv.nonparametric import kaplan_meier_estimator
 from sksurv.functions import StepFunction
+from sksurv.linear_model import IPCRidge
 
 class KM:
     def __init__(self):
@@ -115,6 +116,10 @@ class Model:
             alpha = params.get('alpha',0.)
             return CoxPHSurvivalAnalysis(alpha=alpha)
         
+        elif name == "AFTModel":
+            alpha = params.get('alpha',0.)
+            return IPCRidge(alpha = alpha) 
+        
         elif name == "KM":
             return KM()
 
@@ -133,7 +138,10 @@ class Model:
         if self.model_type == 'binary':
             return self.model.predict_proba(X)[:,1]
         elif self.model_type == 'survival':
-            return self.model.predict_survival_function(X, return_array= return_array) # the survival function.
+            if isinstance(self.model,IPCRidge):
+                return self.model.predict(X)
+            else:
+                return self.model.predict_survival_function(X, return_array= return_array) # the survival function.
         else:
             return self.model.predict(X).squeeze()
     
@@ -143,6 +151,8 @@ class Model:
         elif self.model_type == 'continuous': 
             return -mean_squared_error(y_true, y_predict)
         elif self.model_type == 'survival':
+            if len(y_predict.shape)==1:
+                y_predict = y_predict[:,None]
             return concordance_index_censored(y_true["e"], y_true["t"], 1-y_predict[:,0])
         elif self.model_type == 'KM':
             return 0

@@ -178,17 +178,21 @@ class OutcomeEstimator:
         e_mod.fit(Xtrain[train_sub_idx], e_vec_train)
         
         #survival functions for everyone.
-        p_e_x = e_mod.predict(Xtest[test_sub_idx],return_array=False)
-        
+        if test_sub_idx is not None:
+            p_e_x = e_mod.predict(Xtest[test_sub_idx],return_array=False)
+        else:
+            p_e_x = e_mod.predict(Xtest,return_array=False)
+
         if estimand == "expected_conditional_survival":
             p_c_s = predict_cond_expected_survival(p_e_x, Yptest[test_sub_idx])
             p_out = np.ones(Ytest.shape[0])
             p_out[test_sub_idx] = p_c_s
-        else:
-            breakpoint()
-            p_c_s = predict_survival(p_c_x, Yptest[test_sub_idx])
+        elif estimand == "expected_survival_time":
             p_out = np.ones(Ytest.shape[0])
-            p_out[test_sub_idx] = p_c_s
+            if test_sub_idx is not None:
+                p_out[test_sub_idx] = p_e_x
+            else:
+                p_out = p_e_x
 
         return p_out, e_mod
 
@@ -230,7 +234,6 @@ class OutcomeEstimator:
                 dG = np.insert(-p_c_x[i].y[1:]+p_c_x[i].y[:-1],0,0)
                 g_interp = lambda xx: xx * np.interp(xx, p_c_x[i].x, dG)
                 integrand = lambda xx: (Qlambda(xx) / Dlambda(xx))* g_interp(xx)
-                breakpoint()
                 integral = quad(integrand,p_c_x[i].x[0], Yptest[i], points = 0 )
 
 
@@ -278,7 +281,7 @@ class OutcomeEstimator:
             hp=best_hp_c, model_type=self.params['censoring_model']['model_type'])
         
         c_mod.fit(Xtrain[train_sub_idx], c_vec_train)
-
+        
         p_c_x = c_mod.predict(Xtest[test_sub_idx],return_array=False)
         p_c_s = predict_survival(p_c_x, Yptest[test_sub_idx])
         p_out = np.ones(Ytest.shape[0])
@@ -391,7 +394,6 @@ class OutcomeEstimator:
 
             U1_test = ((Stest==S_target) * (Dtest))/(p_s_x) * ((Ttest*Yptest) / (p_T1_S* p_c_1))
             U0_test = ((Stest==S_target) * (Dtest))/(p_s_x) * (((1-Ttest)*Yptest) / (p_T0_S* p_c_0))
-            breakpoint()
             #breakpoint()
             # final signals
             #U1_test = ((1-Stest)/(1-p_s1_x)) * (  (Ttest*Ytest) / p_T1_S0  ) 
@@ -492,6 +494,7 @@ class OutcomeEstimator:
             # data_resp = {'X': XTtrain_obs, 'y': Ytrain_obs}
             data_resp1 = {'X': X1train_obs , 'y': Y1ptrain_obs}
             data_resp0 = {'X': X0train_obs , 'y': Y0ptrain_obs}
+
             if len(self.params['response_surface_1']['hp'].keys()) != 0:  # Obsolete?
                 print('\nHP search for response surface model')
                 best_hp_resp1 = self._hp_selection(data_resp1, 
@@ -551,16 +554,77 @@ class OutcomeEstimator:
             # Ut_test0   = (1/pS_0)*((1-Stest)*rs_signal + Stest*ipw_signal)
             Ut_test0   = (1/(1-X_pred_s))*((1-Stest)*rs_signal + Stest*ipw_signal)
 
-            final_data.append((orig_idx_test, Ut_test1[:,None], Ut_test0[:,None]))
+            final_data.append((orig_idx_test, Ut_test1[:,None], Ut_test0[:,None], Xt_pred_f1, Xt_pred_f0))
         
         print(f'number of tuples: {len(final_data)}')
         print(f'shapes of tuple 1: {[elem.shape for elem in final_data[0]]}')
         U1_obs_final = np.concatenate([elem[1] for elem in final_data], axis=0)
         U0_obs_final = np.concatenate([elem[2] for elem in final_data], axis=0)
         orig_idxs_shuffled = np.concatenate([elem[0] for elem in final_data], axis=0)
+
+        f1 = np.concatenate([elem[3] for elem in final_data], axis=0) 
+        f0 = np.concatenate([elem[4] for elem in final_data], axis=0) 
+        #return (f1[orig_idxs_shuffled.argsort()].squeeze(), \
+        #    f0[orig_idxs_shuffled.argsort()].squeeze()) 
         return (U1_obs_final[orig_idxs_shuffled.argsort()].squeeze(), \
             U0_obs_final[orig_idxs_shuffled.argsort()].squeeze())
-    
+
+
+    def _compute_surv_obs_estimates(self, cross_fitting_seed=42): 
+        cvk = StratifiedKFold(n_splits=3, shuffle=True, random_state=cross_fitting_seed)
+        X, Yp, T, S, Y, C, D = model_util._get_numpy_arrays(self.params, self.stacked_table)
+
+        orig_idx = np.arange(S.shape[0])
+
+        final_data = []
+
+        for train_idx, test_idx in cvk.split(X,S): 
+            Xtrain, Yptrain, Ttrain, Strain, Ytrain, Ctrain, Dtrain = X[train_idx], Yp[train_idx], T[train_idx], S[train_idx], Y[train_idx], C[train_idx], D[train_idx]
+            Xtest, Yptest, Ttest, Stest, Ytest, Ctest, Dtest = X[test_idx], Yp[test_idx], T[test_idx], S[test_idx], Y[test_idx], C[test_idx], D[test_idx]
+            orig_idx_train = orig_idx[train_idx]; orig_idx_test = orig_idx[test_idx]
+
+            # stratifying data by RCT and obs
+            source_idxs = np.where(Strain == 1)
+            Xtrain_obs, Yptrain_obs, Ttrain_obs, Strain_obs, Ytrain_obs, Ctrain_obs, Dtrain_obs = Xtrain[source_idxs], Yptrain[source_idxs], Ttrain[source_idxs], Strain[source_idxs], Ytrain[source_idxs], Ctrain[source_idxs], Dtrain[source_idxs]
+            source_idxs = np.where(Stest == 1)
+            Xtest_obs, Yptest_obs, Ttest_obs, Stest_obs, Ytest_obs, Ctest_obs, Dtest_obs = Xtest[source_idxs], Yptest[source_idxs], Ttest[source_idxs], Stest[source_idxs], Ytest[source_idxs], Ctest[source_idxs], Dtest[source_idxs]
+
+            # event response surface
+
+            # Event Model with A=1
+            e_idx_train = (Ttrain == 1) * (Strain == 1)
+            e_idx_test = np.arange(Ttest.shape[0])
+
+            p_e_1, event_model1 = self._compute_event_survival(train_vecs = (Xtrain, Yptrain, Ttrain, Strain, Dtrain, Ctrain, Ytrain),
+                                            test_vecs = (Xtest, Yptest, Ttest, Stest, Dtest, Ctest, Ytest),
+                                            train_sub_idx = e_idx_train,
+                                            test_sub_idx = e_idx_test, estimand = "expected_survival_time")
+            
+            # Censoring model with A=0
+            c_idx_train = (Ttrain == 0) * (Strain == 1)
+            c_idx_test = (Ttest == 0) * (Stest == 1)
+            p_e_0, event_model0 = self._compute_event_survival(train_vecs = (Xtrain, Yptrain, Ttrain, Strain, Dtrain, Ctrain, Ytrain),
+                                            test_vecs = (Xtest, Yptest, Ttest, Stest, Dtest, Ctest, Ytest),
+                                            train_sub_idx = e_idx_train,
+                                            test_sub_idx = e_idx_test, estimand = "expected_survival_time")
+        
+            
+            
+            Xt_pred_f1 = p_e_1
+            Xt_pred_f0 = p_e_0
+
+
+            final_data.append((orig_idx_test, Xt_pred_f1, Xt_pred_f0))
+        
+        print(f'number of tuples: {len(final_data)}')
+        print(f'shapes of tuple 1: {[elem.shape for elem in final_data[0]]}')
+        U1_obs_final = np.concatenate([elem[1] for elem in final_data], axis=0)
+        U0_obs_final = np.concatenate([elem[2] for elem in final_data], axis=0)
+        orig_idxs_shuffled = np.concatenate([elem[0] for elem in final_data], axis=0)
+
+        return (U1_obs_final[orig_idxs_shuffled.argsort()].squeeze(), \
+            U0_obs_final[orig_idxs_shuffled.argsort()].squeeze())
+
     def estimate_signals(self, S):
         if S == 0: 
             return self._compute_iptw_estimates(S_target=0)
@@ -568,6 +632,9 @@ class OutcomeEstimator:
             if self.params["propensity_weighting_for_phi1"]:
                 return self._compute_iptw_estimates(S_target=1) #we use the same estimator for phi1 than phi0
             else:
-                return self._compute_obs_estimates() # doubly robust estimator 
+                if self.params["censoring_model"]["model_type"]=="survival":
+                    return self._compute_surv_obs_estimates()
+                else:
+                    return self._compute_obs_estimates() # doubly robust estimator 
         
         

@@ -12,7 +12,7 @@ data:
   censoring_type: ${censoring_type.censoring_type}
   confounding_type: random
   covariate_unobserved_effect: ['nnhealth','birth.o', 'booze', 'mom.hs']
-  omega: -23
+  omega: -34 #-23
   gamma_coefs: [1.,1.75,2.,2.25,2.75]
   gamma_probs: [0.2,0.2,0.2,0.2,0.2]
   grand_seed: 10
@@ -22,12 +22,12 @@ data:
   selection_seed: 42
   obs_dict:
     num_obs: 1
-    sizes: [3.] # TODO: play with this a little bit
+    sizes: [1.] # TODO: play with this a little bit
     confounder_concealment: [0] #[cc,cc,cc,cc,cc] # will be concealed according to ordering of coefficients
     missing_bias: [False]
     effect_mod_concealment: False
   rct_dict:
-    size: 3.  
+    size: 1.  
   reweighting: True
   reweighting_type: non_linear
   reweighting_factor: 0.2

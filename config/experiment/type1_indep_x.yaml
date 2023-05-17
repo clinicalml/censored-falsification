@@ -4,10 +4,11 @@
 defaults:
   - override /censoring_type: type1_indep_x
   - override /censoring_model: unconditional_censoring
+  - override /event_model: aft
 
 num_iters: 5
 alpha: 0.05
 falsification_type: MMR-Contrast
-phi1_as_phi0: True
+propensity_weighting_for_phi1: False
 
 name: type1_indep_x

@@ -4,11 +4,11 @@ model:
   propensity_model:
     model_name: GradientBoostingClassifier
     hp:
-      learning_rate: [0.01]
-      n_estimators: [50]
+      learning_rate: [0.01,0.001]
+      n_estimators: [50,100]
       max_depth: [2]
-      min_samples_leaf: [50]
-      min_samples_split: [50]
+      min_samples_leaf: [10, 50]
+      min_samples_split: [10, 50]
       max_features: ['sqrt']
       random_state': [42]
     model_type: binary 
